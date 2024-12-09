@@ -1,5 +1,5 @@
 import pandas as pd
-from tkinter import Tk, Label, Button, filedialog, messagebox
+from tkinter import Tk, Label, Button, filedialog, messagebox, Frame
 from datetime import datetime, timedelta
 import calendar
 import os
@@ -26,7 +26,7 @@ def load_excel_file(sheet_name, filter_date=False, skip_rows=False):
             data = pd.read_csv(file_path, skiprows=5 if skip_rows else 0)  # Conditionally skip the first 5 rows
         else:
             messagebox.showerror("Error", "¡Formato de archivo no soportado!")
-            return
+            return False
 
         if filter_date:
             if 'FECHA' in data.columns:
@@ -40,19 +40,35 @@ def load_excel_file(sheet_name, filter_date=False, skip_rows=False):
                 data['FECHA'] = data['FECHA'].dt.strftime('%Y-%m-%d')
             else:
                 messagebox.showerror("Error", "¡La columna 'FECHA' no se encuentra en el archivo!")
-                return
+                return False
 
         data.to_excel(excel_writer, sheet_name=sheet_name, index=False)
         messagebox.showinfo("Éxito", f"¡Archivo subido correctamente a la hoja {sheet_name}!")
         print(data.head())  # Display the first few rows of the file
+        return True
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al cargar el archivo: {e}")
+        return False
 
 def create_gui():
     # Initialize the root window
     root = Tk()
     root.title("Cargador de Archivos Excel")
-    root.geometry("400x200")
+    root.geometry("500x300")
+    root.configure(bg="#2C3E50")
+
+    # Create a title label
+    title_label = Label(root, 
+                        text="Creador Archivo Complementos", 
+                        font=("Helvetica", 16, "bold"), 
+                        bg="#2C3E50", 
+                        fg="#ECF0F1"
+    )
+    title_label.pack(pady=20)
+
+    # Create a frame for the content
+    content_frame = Frame(root, bg="#2C3E50")
+    content_frame.pack(pady=10, padx=20, fill="both", expand=True)
 
     # Define the sequence of uploads
     uploads = [
@@ -73,15 +89,20 @@ def create_gui():
     def handle_upload(index):
         filter_date = (index == 2)  # Only filter the last upload
         skip_rows = (index == 2)  # Only skip rows for the last upload
-        load_excel_file(uploads[index][2], filter_date, skip_rows)
-        update_gui(index + 1)
+        success = load_excel_file(uploads[index][2], filter_date, skip_rows)
+        if success:
+            update_gui(index + 1)
 
-    # Add a label and button to the window
-    label = Label(root, text="")
+    # Add a label and button to the content frame
+    label = Label(content_frame, text="", font=("Helvetica", 12), bg="#2C3E50", fg="#ECF0F1")
     label.pack(pady=10)
 
-    button = Button(root, text="")
+    button = Button(content_frame, text="", font=("Helvetica", 12), bg="#3498DB", fg="grey", activebackground="#2980B9", activeforeground="grey", padx=10, pady=5, bd=0, highlightthickness=0)
     button.pack(pady=10)
+
+    # Ensure button looks good when pressed
+    button.bind("<Enter>", lambda e: button.config(bg="#2980B9"))
+    button.bind("<Leave>", lambda e: button.config(bg="#3498DB"))
 
     # Start the sequence
     update_gui(0)
